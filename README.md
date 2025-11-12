@@ -1,36 +1,261 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# RAG Chatbot - Gemini & Supabase
 
-## Getting Started
+A modern **Retrieval-Augmented Generation (RAG)** chatbot built with Next.js 14, Vercel AI SDK, Google Gemini AI, and Supabase vector store.
 
-First, run the development server:
+## 🚀 Live Demo
+
+[Deploy to Vercel]() - *Coming soon*
+
+## ✨ Features
+
+- 🤖 **AI-Powered Chat** - Streaming responses using Google Gemini AI
+- 📚 **RAG Implementation** - Retrieval-augmented generation for contextual answers
+- 📄 **Document Upload** - Upload TXT/MD files to build your knowledge base
+- 💾 **Vector Storage** - Supabase with pgvector for semantic search
+- 🌓 **Dark Mode** - Beautiful light/dark theme toggle
+- 💬 **Persistent Chat** - Chat history saved in localStorage
+- 📱 **Responsive Design** - Works seamlessly on mobile and desktop
+- ⚡ **Real-time Streaming** - See AI responses as they're generated
+
+## 🏗️ Architecture
+
+### Tech Stack
+
+- **Framework**: Next.js 14 (App Router)
+- **AI Model**: Google Gemini 1.5 Flash
+- **Embeddings**: Gemini Embedding-001
+- **Vector Store**: Supabase (PostgreSQL + pgvector)
+- **AI SDK**: Vercel AI SDK
+- **Styling**: TailwindCSS
+- **Language**: TypeScript
+
+### How RAG Works
+
+1. **Document Ingestion**:
+   - User uploads documents (TXT/MD files)
+   - Documents are chunked into smaller pieces (500 chars with 50 char overlap)
+   - Each chunk is embedded using Gemini embeddings
+   - Chunks + embeddings stored in Supabase
+
+2. **Query Processing**:
+   - User asks a question
+   - Question is embedded using the same model
+   - Cosine similarity search finds top 3 relevant chunks
+   - Retrieved chunks are added to the AI prompt as context
+
+3. **Response Generation**:
+   - Gemini receives the query + retrieved context
+   - Generates a streaming response
+   - Citations show which documents were used
+
+## 📋 Prerequisites
+
+- Node.js 18+ and npm
+- Supabase account ([create one](https://supabase.com))
+- Google AI API key ([get one](https://makersuite.google.com/app/apikey))
+
+## 🛠️ Installation
+
+### 1. Clone the Repository
+
+```bash
+git clone <your-repo-url>
+cd rag-chatbot
+```
+
+### 2. Install Dependencies
+
+```bash
+npm install
+```
+
+### 3. Setup Supabase Database
+
+1. Create a new project on [Supabase](https://supabase.com)
+2. Go to **SQL Editor** and run this script:
+
+```sql
+-- Enable pgvector extension
+CREATE EXTENSION IF NOT EXISTS vector;
+
+-- Create documents table
+CREATE TABLE documents (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  content TEXT NOT NULL,
+  embedding vector(768),  -- Gemini embeddings are 768 dimensions
+  metadata JSONB,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create index for faster similarity search
+CREATE INDEX ON documents USING ivfflat (embedding vector_cosine_ops)
+WITH (lists = 100);
+
+-- Enable Row Level Security
+ALTER TABLE documents ENABLE ROW LEVEL SECURITY;
+
+-- Create policy to allow all operations (adjust for production)
+CREATE POLICY "Allow all operations" ON documents
+FOR ALL
+USING (true)
+WITH CHECK (true);
+```
+
+3. Get your credentials from **Settings > API**:
+   - Project URL
+   - Anon/Public key
+   - Service role key (keep secret!)
+
+### 4. Configure Environment Variables
+
+Copy `.env.example` to `.env.local`:
+
+```bash
+cp .env.example .env.local
+```
+
+Edit `.env.local` with your credentials:
+
+```env
+# Gemini API Key (Get from: https://makersuite.google.com/app/apikey)
+GOOGLE_API_KEY=your_gemini_api_key_here
+
+# Supabase Configuration (Get from: https://supabase.com/dashboard)
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+```
+
+### 5. Run the Development Server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🚀 Deployment to Vercel
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### One-Click Deploy
 
-## Learn More
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=<your-repo-url>)
 
-To learn more about Next.js, take a look at the following resources:
+### Manual Deployment
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. Push your code to GitHub/GitLab/Bitbucket
+2. Import your repo on [Vercel](https://vercel.com)
+3. Add environment variables in **Settings > Environment Variables**
+4. Deploy!
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 📖 Usage
 
-## Deploy on Vercel
+### 1. Upload Documents
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- Click the upload area at the bottom
+- Select a `.txt` or `.md` file
+- Wait for processing (chunks will be created and embedded)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### 2. Ask Questions
+
+- Type your question in the chat input
+- The bot will:
+  - Search for relevant document chunks
+  - Generate a contextual answer
+  - Show source references
+
+### 3. Manage Chat
+
+- **Clear Chat**: Click "Clear chat" to reset conversation
+- **Dark Mode**: Toggle theme with the icon in header
+
+## 🗂️ Project Structure
+
+```
+rag-chatbot/
+├── app/
+│   ├── api/
+│   │   ├── chat/route.ts          # RAG chat endpoint
+│   │   └── upload/route.ts        # Document upload endpoint
+│   ├── layout.tsx                 # Root layout
+│   ├── page.tsx                   # Home page
+│   └── globals.css                # Global styles
+├── components/
+│   ├── ChatInterface.tsx          # Main chat UI
+│   ├── ChatMessage.tsx            # Message bubble component
+│   ├── FileUpload.tsx             # File upload component
+│   └── ThemeToggle.tsx            # Dark mode toggle
+├── lib/
+│   ├── gemini.ts                  # Gemini client & embeddings
+│   ├── supabase.ts                # Supabase client (client-side)
+│   ├── supabaseAdmin.ts           # Supabase admin (server-side)
+│   └── vectorStore.ts             # Vector store operations
+├── types/
+│   └── index.ts                   # TypeScript types
+├── .env.local                     # Environment variables (gitignored)
+├── .env.example                   # Example env file
+└── README.md                      # This file
+```
+
+## 🔧 Customization
+
+### Change Chunk Size
+
+Edit `lib/vectorStore.ts`:
+
+```typescript
+export function chunkText(text: string, chunkSize: number = 500, overlap: number = 50)
+```
+
+### Change Number of Retrieved Documents
+
+Edit `app/api/chat/route.ts`:
+
+```typescript
+const relevantDocs = await retrieveRelevantDocuments(userQuery, 3); // Change 3 to desired number
+```
+
+### Switch AI Model
+
+Edit `lib/gemini.ts`:
+
+```typescript
+return genAI.getGenerativeModel({ model: 'gemini-1.5-pro' }); // Use Pro instead of Flash
+```
+
+## 🐛 Troubleshooting
+
+### "Failed to generate embedding"
+
+- Check your `GOOGLE_API_KEY` is valid
+- Ensure you have API quota remaining
+
+### "Failed to store document"
+
+- Verify Supabase credentials are correct
+- Check that the `documents` table exists
+- Ensure pgvector extension is enabled
+
+### "Failed to get response"
+
+- Check browser console for errors
+- Verify all environment variables are set
+- Check Supabase RLS policies
+
+## 📝 License
+
+MIT License - feel free to use this project for learning or production!
+
+## 🙏 Acknowledgments
+
+- [Vercel AI SDK](https://sdk.vercel.ai/)
+- [Google Gemini](https://ai.google.dev/)
+- [Supabase](https://supabase.com/)
+- [Next.js](https://nextjs.org/)
+
+## 🤝 Contributing
+
+Contributions welcome! Please open an issue or PR.
+
+---
+
+**Built with ❤️ for the RAG Chatbot Assignment**
