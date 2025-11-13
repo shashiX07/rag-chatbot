@@ -56,5 +56,43 @@ AS $$
   LIMIT match_count;
 $$;
 
+-- ============================================
+-- AUTO-CLEANUP: Delete documents older than 30 minutes
+-- ============================================
+
+-- Function to clean up old documents
+CREATE OR REPLACE FUNCTION cleanup_old_documents()
+RETURNS void
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  DELETE FROM documents
+  WHERE created_at < NOW() - INTERVAL '30 minutes';
+END;
+$$;
+
+-- Create a scheduled job to run cleanup every 5 minutes
+-- Note: This requires pg_cron extension (available in Supabase Pro)
+-- For free tier, you can trigger this via an API cron job (Vercel Cron or similar)
+
+-- If you have pg_cron enabled (Pro plan):
+-- SELECT cron.schedule('cleanup-old-documents', '*/5 * * * *', 'SELECT cleanup_old_documents();');
+
+-- Alternative: Manual trigger function (call from API)
+CREATE OR REPLACE FUNCTION trigger_cleanup()
+RETURNS TABLE (deleted_count bigint)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  count_deleted bigint;
+BEGIN
+  DELETE FROM documents
+  WHERE created_at < NOW() - INTERVAL '30 minutes';
+  
+  GET DIAGNOSTICS count_deleted = ROW_COUNT;
+  RETURN QUERY SELECT count_deleted;
+END;
+$$;
+
 -- Verify setup
 SELECT 'Database setup complete!' AS status;

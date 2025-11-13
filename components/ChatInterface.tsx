@@ -185,8 +185,50 @@ export default function ChatInterface() {
     setMessages([]);
   };
 
+  const clearDatabase = async () => {
+    if (!confirm('⚠️ This will delete ALL documents from the database. Are you sure?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/clear', {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert('✅ Database cleared successfully!');
+        clearChat(); // Also clear the chat
+      } else {
+        alert('❌ Failed to clear database: ' + data.message);
+      }
+    } catch (error) {
+      console.error('Error clearing database:', error);
+      alert('❌ An error occurred while clearing the database');
+    }
+  };
+
   return (
     <div className="flex flex-col h-full">
+      {/* Header with Clear Database Button */}
+      {messages.length > 0 && (
+        <div className="flex justify-end gap-2 p-3 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+          <button
+            onClick={clearChat}
+            className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-all"
+          >
+            Clear Chat
+          </button>
+          <button
+            onClick={clearDatabase}
+            className="px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all border border-red-300 dark:border-red-700"
+          >
+            Clear Memory
+          </button>
+        </div>
+      )}
+
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 ? (
