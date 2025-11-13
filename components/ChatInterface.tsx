@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Message } from '@/types';
 import ChatMessage from './ChatMessage';
 import { nanoid } from 'nanoid';
+import chatBotImage from '../public/chatbot.png';
 
 export default function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -234,9 +235,9 @@ export default function ChatInterface() {
         {messages.length === 0 ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
-              <div className="text-4xl mb-4">💬</div>
+              <img src={chatBotImage.src} alt="Chatbot" className="mx-auto mb-4 w-32 h-32" />
               <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-gray-100">
-                Welcome to RAG Chatbot
+                Welcome to RAGBot
               </h2>
               <p className="text-gray-600 dark:text-gray-400 mb-4">
                 Upload documents and ask questions about them
