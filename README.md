@@ -71,7 +71,7 @@ A modern **Retrieval-Augmented Generation (RAG)** chatbot built with Next.js 14,
 ### 1. Clone the Repository
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/shashix07/rag-chatbot
 cd rag-chatbot
 ```
 
