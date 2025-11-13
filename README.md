@@ -8,6 +8,16 @@ A modern **Retrieval-Augmented Generation (RAG)** chatbot built with Next.js 14,
 
 ---
 
+## 📸 Screenshots & Demo
+
+### Main Chat Interface
+![Chatbot Screenshot](public/screenshot.png)
+
+### Demo Video
+[▶️ Watch Demo (MP4)](public/video.mp4)
+
+---
+
 ## ✨ Features
 
 - 🤖 **AI-Powered Chat** - Streaming responses using Google Gemini AI
@@ -216,14 +226,6 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 - **Clear Chat**: Click "Clear chat" to reset conversation
 - **Dark Mode**: Toggle theme with the icon in header
-
-## 📸 Screenshots & Demo
-
-### Main Chat Interface
-![Chatbot Screenshot](public/screenshot.png)
-
-### Demo Video
-[▶️ Watch Demo (MP4)](public/video.mp4)
 
 ## 🗂️ Project Structure
 
