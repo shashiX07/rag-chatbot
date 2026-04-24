@@ -41,18 +41,40 @@ Be concise, accurate, and helpful.${context}`;
 
     // Use Vercel AI SDK streamText with Google provider
     const result = streamText({
-      model: google('gemini-2.0-flash'),
+      model: google('gemini-2.5-flash'),
       messages: [
         { role: 'system', content: systemPrompt },
         ...messages,
       ],
     });
 
-    return result.toTextStreamResponse();
+    const stream = new ReadableStream({
+      async start(controller) {
+        try {
+          for await (const chunk of result.textStream) {
+            controller.enqueue(new TextEncoder().encode(chunk));
+          }
+          controller.close();
+        } catch (error) {
+          console.error('Streaming error:', error);
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          if (errorMessage.includes('quota') || errorMessage.includes('429')) {
+            controller.enqueue(new TextEncoder().encode('\n\n⚠️ API quota exceeded. Your Gemini API has reached its limit. Please wait 24 hours for reset or upgrade your API plan at https://ai.google.dev/'));
+          } else {
+            controller.enqueue(new TextEncoder().encode('\n\nSorry, I encountered an error: ' + errorMessage));
+          }
+          controller.close();
+        }
+      }
+    });
+
+    return new Response(stream, {
+      headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+    });
   } catch (error) {
     console.error('Error in chat API:', error);
     
-    // Check if it's a quota error
+    // Check if it's a synchronous quota error
     const errorMessage = error instanceof Error ? error.message : String(error);
     if (errorMessage.includes('quota') || errorMessage.includes('429')) {
       return new Response(
@@ -65,7 +87,7 @@ Be concise, accurate, and helpful.${context}`;
     }
     
     return new Response(
-      'Sorry, I encountered an error. Please try again later.',
+      'Sorry, I encountered an error: ' + String(error),
       { status: 200, headers: { 'Content-Type': 'text/plain' } }
     );
   }
