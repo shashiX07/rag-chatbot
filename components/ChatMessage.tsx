@@ -2,6 +2,8 @@
 
 import { Message } from '@/types';
 import { useEffect, useRef } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface ChatMessageProps {
   message: Message;
@@ -67,8 +69,14 @@ export default function ChatMessage({ message }: ChatMessageProps) {
             </div>
           </div>
         )}
-        <div className="whitespace-pre-wrap break-words">
-          {message.content}
+        <div className={`whitespace-pre-wrap break-words ${!isUser ? 'prose prose-sm md:prose-base prose-blue dark:prose-invert max-w-none' : ''}`}>
+          {!isUser ? (
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {message.content}
+            </ReactMarkdown>
+          ) : (
+            message.content
+          )}
         </div>
         {message.sources && message.sources.length > 0 && (
           <div className="mt-3 pt-3 border-t border-gray-300 dark:border-gray-600">

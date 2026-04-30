@@ -87,22 +87,28 @@ export async function POST(req: NextRequest) {
       }
     } else if (file.type.startsWith('image/')) {
       try {
-        const { GoogleGenerativeAI } = await import('@google/generative-ai');
-        const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY!);
-        const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+        // Send the image to our Python FastAPI service
+        const pythonFormData = new FormData();
+        pythonFormData.append('file', new Blob([buffer], { type: file.type }), filename);
+
+        const ocrUrl = process.env.OCR_API_URL || 'http://127.0.0.1:8000';
+        const response = await fetch(`${ocrUrl}/scan`, {
+          method: 'POST',
+          body: pythonFormData,
+        });
+
+        if (!response.ok) {
+          throw new Error(`Python OCR service returned status: ${response.status}`);
+        }
+
+        const data = await response.json();
         
-        const result = await model.generateContent([
-          "Extract all text from this image and provide a detailed description of what you see. This will be used in a knowledge base for answering questions.",
-          {
-            inlineData: {
-              data: buffer.toString('base64'),
-              mimeType: file.type
-            }
-          }
-        ]);
-        
-        content = result.response.text();
-        console.log(`Image scanned: ${content.length} characters extracted`);
+        if (!data.success) {
+          throw new Error(data.error || 'Unknown error from Python OCR service');
+        }
+
+        content = data.content;
+        console.log(`Image scanned via local service: ${content.length} characters extracted`);
         
         if (!content || content.trim().length === 0) {
           return NextResponse.json(
@@ -113,7 +119,7 @@ export async function POST(req: NextRequest) {
       } catch (imgError) {
         console.error('Image scanning error:', imgError);
         return NextResponse.json(
-          { success: false, message: 'Failed to scan image file. Make sure your API key is valid.' },
+          { success: false, message: 'Failed to scan image. Ensure the OCR service is running and accessible (check OCR_API_URL in .env).' },
           { status: 400 }
         );
       }
