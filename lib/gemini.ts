@@ -15,13 +15,13 @@ export const getEmbeddingModel = () => {
 
 // Simple hash-based embedding as fallback (deterministic)
 function simpleEmbedding(text: string): number[] {
-  const embedding = new Array(768).fill(0); // Standard embedding size
+  const embedding = new Array(3072).fill(0); // Match gemini-embedding-2 dimension
   const words = text.toLowerCase().split(/\s+/);
 
   words.forEach((word, idx) => {
     for (let i = 0; i < word.length; i++) {
       const charCode = word.charCodeAt(i);
-      const position = (charCode * (i + 1) * (idx + 1)) % 768;
+      const position = (charCode * (i + 1) * (idx + 1)) % 3072;
       embedding[position] += 1 / (words.length + 1);
     }
   });

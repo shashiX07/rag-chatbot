@@ -8,17 +8,15 @@ CREATE EXTENSION IF NOT EXISTS vector;
 CREATE TABLE IF NOT EXISTS documents (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   content TEXT NOT NULL,
-  embedding vector(768),  -- Gemini embeddings are 768 dimensions
+  embedding vector(3072),  -- Gemini embeddings (gemini-embedding-2) are 3072 dimensions
   metadata JSONB,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Create index for faster similarity search using IVFFlat algorithm
--- This dramatically improves query performance for vector similarity
-CREATE INDEX IF NOT EXISTS documents_embedding_idx 
-ON documents 
-USING ivfflat (embedding vector_cosine_ops)
-WITH (lists = 100);
+-- Note: We do not create an ivfflat index here because pgvector's ivfflat 
+-- only supports up to 2000 dimensions. Since gemini-embedding-2 uses 3072,
+-- we rely on exact nearest neighbor search (sequential scan) which is 
+-- perfectly fast and accurate for datasets up to hundreds of thousands of rows.
 
 -- Enable Row Level Security
 ALTER TABLE documents ENABLE ROW LEVEL SECURITY;
@@ -33,7 +31,7 @@ WITH CHECK (true);
 
 -- Optional: Create a function to search for similar documents
 CREATE OR REPLACE FUNCTION match_documents(
-  query_embedding vector(768),
+  query_embedding vector(3072),
   match_threshold float DEFAULT 0.5,
   match_count int DEFAULT 3
 )

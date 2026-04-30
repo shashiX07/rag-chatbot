@@ -52,11 +52,76 @@ export async function POST(req: NextRequest) {
           { status: 400 }
         );
       }
+    } else if (filename.endsWith('.csv') || file.type === 'text/csv') {
+      try {
+        const { parse } = await import('csv-parse/sync');
+        const records = parse(buffer.toString('utf-8'), {
+          columns: true,
+          skip_empty_lines: true,
+          relax_column_count: true
+        });
+        content = records.map((record: any) => {
+          return Object.entries(record)
+            .map(([key, value]) => `${key}: ${value}`)
+            .join(', ');
+        }).join('\n');
+      } catch (csvError) {
+        console.error('CSV parsing error:', csvError);
+        return NextResponse.json(
+          { success: false, message: 'Failed to parse CSV file.' },
+          { status: 400 }
+        );
+      }
+    } else if (filename.endsWith('.docx') || file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+      try {
+        const mammoth = await import('mammoth');
+        // @ts-ignore - Mammoth types might be slightly off with buffer
+        const result = await mammoth.extractRawText({ buffer });
+        content = result.value;
+      } catch (docxError) {
+        console.error('DOCX parsing error:', docxError);
+        return NextResponse.json(
+          { success: false, message: 'Failed to parse DOCX file.' },
+          { status: 400 }
+        );
+      }
+    } else if (file.type.startsWith('image/')) {
+      try {
+        const { GoogleGenerativeAI } = await import('@google/generative-ai');
+        const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY!);
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+        
+        const result = await model.generateContent([
+          "Extract all text from this image and provide a detailed description of what you see. This will be used in a knowledge base for answering questions.",
+          {
+            inlineData: {
+              data: buffer.toString('base64'),
+              mimeType: file.type
+            }
+          }
+        ]);
+        
+        content = result.response.text();
+        console.log(`Image scanned: ${content.length} characters extracted`);
+        
+        if (!content || content.trim().length === 0) {
+          return NextResponse.json(
+            { success: false, message: 'Image appears to be empty or contains no extractable text.' },
+            { status: 400 }
+          );
+        }
+      } catch (imgError) {
+        console.error('Image scanning error:', imgError);
+        return NextResponse.json(
+          { success: false, message: 'Failed to scan image file. Make sure your API key is valid.' },
+          { status: 400 }
+        );
+      }
     } else {
       return NextResponse.json(
         { 
           success: false, 
-          message: 'Unsupported file type. Please upload TXT, MD, or PDF files.' 
+          message: 'Unsupported file type. Please upload TXT, MD, PDF, DOCX, CSV, or Image files.' 
         },
         { status: 400 }
       );
